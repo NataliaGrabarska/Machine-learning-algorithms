@@ -84,7 +84,7 @@ while euclidean_distance.size >= 4:
     euclidean_distance.rename(index = {euclidean_distance.index[coordinates_min] : new_name}, inplace = True)
 
 list1 = []
-k = list1(dictionary.values())
+k = list(dictionary.values())
 for i in range(len(mins)):
     list1.append([cord_name[i][0], cord_name[i][1], mins[i], k[i]])
     
