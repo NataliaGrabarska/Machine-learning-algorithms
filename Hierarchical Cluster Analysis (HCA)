@@ -1,0 +1,93 @@
+import pandas as pd
+import numpy as np
+import scipy.cluster.hierarchy as sch 
+import matplotlib.pyplot as plt 
+
+data = pd.read_excel('path_to_file', index_col = 0)
+
+mean = []
+standard_dev = []
+for x in data.mean():
+    mean.append(x)
+for y in data.std():
+    standard_dev.append(y)
+    
+normalization = []
+i = 0
+for z in data.columns:
+    n = (data[z] - mean[i])/ standard_dev[i]
+    i+=1
+    normalization.append(n)
+    
+normalization1 = pd.concat(normalization, axis = 1)
+
+value = (normalization1.values)
+matrix = np.zeros((30,30))
+
+for a in range(30):
+    for b in range(30):
+        matrix[a,b] = np.sqrt(np.sum((value[a] - value[b])**2))
+euclidean_distance = pd.DataFrame(matrix)
+
+cord_name = []
+new = iter(range(len(euclidean_distance), 200))
+
+z = euclidean_distance.copy()
+dictionary = {}
+mins = []
+
+while euclidean_distance.size >= 4:
+    t = np.tril(euclidean_distance)
+    matrix0 = pd.DataFrame(t)
+    flat_matrix = np.array(matrix0).flatten()
+    min_value = np.min(flat_matrix[np.nonzero(flat_matrix)])
+    mins.append(min_value)
+    coordinates = np.where(matrix0 == min_value)
+    coordinates_max = max(coordinates)[0]
+    coordinates_min = min(coordinates)[0]
+    cord_list = euclidean_distance.iloc[coordinates_max].name, euclidean_distance.iloc[coordinates_min].name
+    cord_name.append(cord_list)
+    new_name = next(new)
+    
+    vector  = []
+    col_name = []
+    
+    for i in range(0, len(z)):
+        col_name.append(z.columns[i])
+    if euclidean_distance.iloc[coordinates_max].name in col_name and euclidean_distance.iloc[coordinates_min].name in col_name:
+        dictionary[new_name] = 2
+    elif euclidean_distance.iloc[coordinates_max].name not in col_name and euclidean_distance.iloc[coordinates_min].name in col_name:
+        dictionary[new_name] = 1 + dictionary.get(euclidean_distance.iloc[coordinates_max].name)
+    elif euclidean_distance.iloc[coordinates_max].name in col_name and euclidean_distance.iloc[coordinates_min].name not in col_name:
+        dictionary[new_name] = 1 + dictionary.get(euclidean_distance.iloc[coordinates_min].name)
+    else:
+        dictionary[new_name] = dictionary.get(euclidean_distance.iloc[coordinates_min].name) + dictionary.get(euclidean_distance.iloc[coordinates_max].name)
+    
+    
+    for i in range(len(euclidean_distance)):
+        if euclidean_distance.iloc[coordinates_max, i] == 0:
+            vector.append(euclidean_distance.iloc[coordinates_max, i])
+        elif euclidean_distance.iloc[coordinates_min, i] == 0:
+            vector.append(euclidean_distance.iloc[coordinates_min, i])
+        elif euclidean_distance.iloc[coordinates_min, i] > euclidean_distance.iloc[coordinates_max, i]:
+            vector.append(euclidean_distance.iloc[coordinates_min, i])
+        else:
+            vector.append(euclidean_distance.iloc[coordinates_max, i])
+            
+    euclidean_distance.iloc[coordinates_min] = vector
+    euclidean_distance.iloc[:, coordinates_min] = vector
+    
+    euclidean_distance.drop(euclidean_distance.columns[coordinates_max], axis = 1, inplace = True)
+    euclidean_distance.drop(euclidean_distance.index[coordinates_max], axis = 0, inplace = True)
+    
+    euclidean_distance.rename(columns = {euclidean_distance.columns[coordinates_min]: new_name}, inplace = True)
+    euclidean_distance.rename(index = {euclidean_distance.index[coordinates_min] : new_name}, inplace = True)
+
+list1 = []
+k = list1(dictionary.values())
+for i in range(len(mins)):
+    list1.append([cord_name[i][0], cord_name[i][1], mins[i], k[i]])
+    
+fig = plt.figure(figsize=(12,7))
+dendrogram = sch.dendrogram(list1)
+plt.show()
