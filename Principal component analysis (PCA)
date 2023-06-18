@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_excel('path_to_file', index_col = 0)
+
+mean = []
+standard_dev = []
+for x in data.mean():
+    mean.append(x)
+for y in data.std():
+    standard_dev.append(y)
+    
+normalization = []
+i = 0
+for z in data.columns:
+    n = (data[z] - mean[i])/ standard_dev[i]
+    i+=1
+    normalization.append(n)
+normalization = pd.concat(normalization, axis = 1)
+
+def covariance(x,y):
+    x_mean = x.mean()
+    y_mean = y.mean()
+    return sum((x_i - x_mean) * (y_i - y_mean) for x_i, y_i in zip(x,y))/np.sqrt(sum((x_i - x_mean)**2 for x_i in x) * sum((y_i - y_mean)**2 for y_i in y))
+    
+n = 10
+covariance2 = np.zeros((n,n))
+
+for i in range(n):
+    for j in range(n):
+        covariance2[i,j] = covariance(data.iloc[:,i], data.iloc[:,j])
+
+matrix = pd.DataFrame(covariance2)
+
+values, vectors  = np.linalg.eig(matrix)
+
+plt.plot([i+1 for i in range(10)], values, marker = 'x')
+plt.plot([i+1 for i in range(10)], [1 for i in range(10)], color = 'r')
+plt.xticks([i+1 for i in range(10)])
+plt.title('Scree plot')
+plt.show()
+
+percentage = []
+for i in range(10):
+    percentage.append((values[i]/10) * 100)
+    
+plt.plot([i+1 for i in range(10)], percentage, marker = 'x')
+plt.xticks([i+1 for i in range(10)])
+plt.show()
+
+vectors_df = pd.DataFrame(vectors)
+PCA_matrix = np.dot(normalization, vectors_df)
+PCA = pd.DataFrame(PCA_matrix, index = data.index)
+
+plt.figure(figsize=(15, 10))
+plt.scatter(PCA[0], PCA[1], color = 'pink', s = 100)
+plt.title('PC1 and PC2')
+for i,txt in enumerate(PCA.index):
+    plt.annotate(txt,(PCA[0][i], PCA[1][i]))
+    
+plt.figure(figsize=(15, 10))
+plt.scatter(PCA[1], PCA[2], s = 100)
+plt.title('PC2 and PC3')
+for i,txt in enumerate(PCA.index):
+    plt.annotate(txt,(PCA[1][i] + 0.05, PCA[2][i]))
+    
+plt.figure(figsize=(15, 10))
+plt.scatter(PCA[0], PCA[2], color = 'red', s = 100)
+plt.title('PC1 and PC3')
+for i,txt in enumerate(PCA.index):
+    plt.annotate(txt,(PCA[0][i] + 0.05, PCA[2][i]))
+   
