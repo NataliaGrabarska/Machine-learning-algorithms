@@ -1,0 +1,37 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+data = pd.read_excel('path_to_file', index_col = 0)
+
+matrix = data.iloc[:,0:2]
+matrix_np = matrix.to_numpy()
+
+k = 5
+x = 0
+
+centroids = matrix_np[np.random.choice(29,k,replace= False),:]
+
+while x < 30:
+    matrix0 = np.zeros((30,k))
+    
+    
+    
+    for a in range(30):
+        for b in range(k):
+            matrix0[a,b] = np.sqrt(np.sum((matrix_np[a] - centroids[b])**2))
+    euclidean_distance = pd.DataFrame(matrix0)
+    euclidean_distance1 = euclidean_distance.to_numpy()
+    
+    
+    class1 = np.argmin(euclidean_distance1, axis = 1)
+    new_centroid = np.array([matrix_np[class1==i,:].mean(axis=0) for i in range(k)])
+    centroids = new_centroid 
+    
+    x+=1
+    
+    centroids_df = pd.DataFrame(centroids)
+    points = pd.DataFrame(matrix_np)
+    plt.scatter(points[0], points[1], c = class1)
+    plt.scatter(centroids[:,0], centroids[:,1], color = 'pink')
+    plt.show()
